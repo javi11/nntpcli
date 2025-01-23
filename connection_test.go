@@ -69,8 +69,8 @@ func TestConnection_Body_Discarding_Bytes(t *testing.T) {
 }
 
 func articleReadyToDownload(t *testing.T) Connection {
-	var conn Connection
 	wg := &sync.WaitGroup{}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	s, err := test.NewServer()
@@ -86,6 +86,7 @@ func articleReadyToDownload(t *testing.T) Connection {
 	port := s.Port()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
 		s.Serve(ctx)
@@ -95,7 +96,7 @@ func articleReadyToDownload(t *testing.T) Connection {
 	netConn, err := d.DialContext(ctx, "tcp", fmt.Sprintf(":%d", port))
 	assert.NoError(t, err)
 
-	conn, err = newConnection(netConn, time.Now().Add(time.Hour))
+	conn, err := newConnection(netConn, time.Now().Add(time.Hour))
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {

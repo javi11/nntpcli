@@ -45,9 +45,11 @@ func (s Server) Serve(ctx context.Context) {
 			return
 		default:
 			c, err := s.l.Accept()
+
 			if ctx.Err() != nil {
 				return
 			}
+
 			maybefatal(err, "Error accepting connection: %v", err)
 
 			go s.s.Process(c)
