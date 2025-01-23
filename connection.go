@@ -2,6 +2,7 @@
 package nntpcli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -17,19 +18,19 @@ type Connection interface {
 	io.Closer
 	Authenticate(username, password string) (err error)
 	JoinGroup(name string) error
-	BodyDecoded(msgId string, w io.Writer, discard int64) (int64, error)
+	BodyDecoded(msgID string, w io.Writer, discard int64) (int64, error)
 	Post(r io.Reader) error
 	CurrentJoinedGroup() string
 	MaxAgeTime() time.Time
-	Stat(msgId string) (int, error)
+	Stat(msgID string) (int, error)
 	Capabilities() ([]string, error)
 }
 
 type connection struct {
-	conn               *textproto.Conn
-	netconn            net.Conn
-	currentJoinedGroup string
 	maxAgeTime         time.Time
+	netconn            net.Conn
+	conn               *textproto.Conn
+	currentJoinedGroup string
 }
 
 func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
@@ -46,7 +47,9 @@ func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
 				maxAgeTime: maxAgeTime,
 			}, nil
 		}
+
 		conn.Close()
+
 		return nil, err
 	}
 
@@ -61,6 +64,7 @@ func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
 func (c *connection) Close() error {
 	_, _, err := c.sendCmd(205, "QUIT")
 	e := c.conn.Close()
+
 	if err == nil {
 		return err
 	}
@@ -77,13 +81,13 @@ func (c *connection) Authenticate(username, password string) (err error) {
 
 	switch code {
 	case 481, 482, 502:
-		//failed, out of sequence or command not available
+		// failed, out of sequence or command not available
 		return err
 	case 281:
-		//accepted without password
+		// accepted without password
 		return nil
 	case 381:
-		//need password
+		// need password
 		break
 	default:
 		return err
@@ -123,7 +127,7 @@ func (c *connection) CurrentJoinedGroup() string {
 // writes it to the provided io.Writer, and optionally discards the first 'discard' lines.
 //
 // Parameters:
-//   - msgId: The message ID of the article to retrieve.
+//   - msgID: The message ID of the article to retrieve.
 //   - w: The io.Writer to which the message body will be written.
 //   - discard: The number of lines to discard from the beginning of the message body.
 //
@@ -136,13 +140,15 @@ func (c *connection) CurrentJoinedGroup() string {
 // optionally discards the specified number of lines before writing the remaining
 // body to the provided io.Writer. If an error occurs during reading or writing,
 // the function ensures that the decoder is fully read to avoid connection issues.
-func (c *connection) BodyDecoded(msgId string, w io.Writer, discard int64) (int64, error) {
-	id, err := c.conn.Cmd("BODY <%s>", msgId) //nolint:all
+func (c *connection) BodyDecoded(msgID string, w io.Writer, discard int64) (int64, error) {
+	id, err := c.conn.Cmd("BODY <%s>", msgID)
 	if err != nil {
-		return 0, err
+		return 0, formatError(err)
 	}
+
 	c.conn.StartResponse(id)
 	defer c.conn.EndResponse(id)
+
 	_, _, err = c.conn.ReadCodeLine(222)
 	if err != nil {
 		return 0, err
@@ -154,9 +160,9 @@ func (c *connection) BodyDecoded(msgId string, w io.Writer, discard int64) (int6
 
 	// Discard the first n lines
 	if discard > 0 {
-		_, err = io.CopyN(io.Discard, dec, discard)
-		if err != nil {
+		if _, err = io.CopyN(io.Discard, dec, discard); err != nil {
 			_, _ = io.Copy(io.Discard, dec)
+
 			return 0, err
 		}
 	}
@@ -164,6 +170,7 @@ func (c *connection) BodyDecoded(msgId string, w io.Writer, discard int64) (int6
 	n, err := io.Copy(w, dec)
 	if err != nil {
 		_, _ = io.Copy(io.Discard, dec)
+
 		return n, err
 	}
 
@@ -179,14 +186,19 @@ func (c *connection) Post(r io.Reader) error {
 	if err != nil {
 		return err
 	}
+
 	w := c.conn.DotWriter()
+
 	_, err = io.Copy(w, r)
 	if err != nil {
 		// This seems really bad
 		return err
 	}
+
 	w.Close()
+
 	_, _, err = c.conn.ReadCodeLine(240)
+
 	return err
 }
 
@@ -197,14 +209,14 @@ const NumberOfStatResParams = 3
 //
 // Parameters:
 //
-//	msgId - The message ID to check.
+//	msgID - The message ID to check.
 //
 // Returns:
 //
 //	int - The message number if the message exists.
 //	error - An error if the command fails or the response is invalid.
-func (c *connection) Stat(msgId string) (int, error) {
-	id, err := c.conn.Cmd("STAT <%s>", msgId)
+func (c *connection) Stat(msgID string) (int, error) {
+	id, err := c.conn.Cmd("STAT <%s>", msgID)
 	if err != nil {
 		return 0, err
 	}
@@ -250,22 +262,27 @@ func (c *connection) Capabilities() ([]string, error) {
 // LIST, etc.)
 func (c *connection) readStrings() ([]string, error) {
 	var sv []string
+
 	for {
 		line, err := c.conn.ReadLine()
 		if err != nil {
 			return nil, err
 		}
+
 		if strings.HasSuffix(line, "\r\n") {
 			line = line[0 : len(line)-2]
 		} else if strings.HasSuffix(line, "\n") {
 			line = line[0 : len(line)-1]
 		}
+
 		if line == "." {
 			break
 		}
+
 		sv = append(sv, line)
 	}
-	return []string(sv), nil
+
+	return sv, nil
 }
 
 func (c *connection) sendCmd(expectCode int, cmd string, args ...any) (int, string, error) {
@@ -273,7 +290,18 @@ func (c *connection) sendCmd(expectCode int, cmd string, args ...any) (int, stri
 	if err != nil {
 		return 0, "", err
 	}
+
 	c.conn.StartResponse(id)
+
 	defer c.conn.EndResponse(id)
+
 	return c.conn.ReadCodeLine(expectCode)
+}
+
+func formatError(err error) error {
+	if IsArticleNotFoundError(err) {
+		return errors.Join(err, ErrArticleNotFound)
+	}
+
+	return err
 }

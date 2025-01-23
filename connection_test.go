@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,7 +32,7 @@ func TestConnection_Body(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(9), n)
-	assert.Equal(t, "test text", string(w.String()))
+	assert.Equal(t, "test text", w.String())
 }
 
 func TestConnection_Body_Closed_Before_Full_Read_Drains_The_Buffer(t *testing.T) {
@@ -68,13 +69,25 @@ func TestConnection_Body_Discarding_Bytes(t *testing.T) {
 }
 
 func articleReadyToDownload(t *testing.T) Connection {
+	var conn Connection
+	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
 
 	s, err := test.NewServer()
 	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		cancel()
+		s.Close()
+
+		wg.Wait()
+	})
+
 	port := s.Port()
+
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		s.Serve(ctx)
 	}()
 
@@ -82,8 +95,12 @@ func articleReadyToDownload(t *testing.T) Connection {
 	netConn, err := d.DialContext(ctx, "tcp", fmt.Sprintf(":%d", port))
 	assert.NoError(t, err)
 
-	conn, err := newConnection(netConn, time.Now().Add(time.Hour))
+	conn, err = newConnection(netConn, time.Now().Add(time.Hour))
 	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		conn.Close()
+	})
 
 	err = conn.JoinGroup("misc.test")
 	assert.NoError(t, err)
