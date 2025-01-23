@@ -14,11 +14,9 @@ import (
 
 func TestDial(t *testing.T) {
 	// create a mock server
-	mockServer, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.NoError(t, err)
+	mockServer, e := net.Listen("tcp", "127.0.0.1:0")
+	assert.NoError(t, e)
+
 	var mx sync.RWMutex
 
 	closed := false
@@ -26,6 +24,7 @@ func TestDial(t *testing.T) {
 	defer func() {
 		mx.Lock()
 		closed = true
+
 		mockServer.Close()
 		mx.Unlock()
 	}()
@@ -44,6 +43,7 @@ func TestDial(t *testing.T) {
 			if err != nil {
 				return
 			}
+
 			_, _ = conn.Write([]byte("200 mock server ready\r\n"))
 			conn.Close()
 		}
@@ -51,10 +51,9 @@ func TestDial(t *testing.T) {
 
 	s := strings.Split(mockServer.Addr().String(), ":")
 	host := s[0]
+
 	port, err := strconv.Atoi(s[1])
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	// create a client and dial the mock server
 	t.Run("Dial", func(t *testing.T) {
@@ -67,7 +66,7 @@ func TestDial(t *testing.T) {
 	// create a client and dial a non-existent server
 	t.Run("DialFail", func(t *testing.T) {
 		c := &client{timeout: 5 * time.Second}
-		_, err = c.Dial(context.Background(), "127.0.0.1", 12345, time.Now().Add(5*time.Second))
+		_, err := c.Dial(context.Background(), "127.0.0.1", 12345, time.Now().Add(5*time.Second))
 		assert.Error(t, err)
 	})
 }

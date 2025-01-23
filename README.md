@@ -10,6 +10,8 @@ To install the `nntpcli` package, you can use `go get`:
 go get github.com/javi11/nntpcli
 ```
 
+Since this package uses [Rapidyenc](github.com/mnightingale/rapidyenc), you will need to build it with **CGO enabled**
+
 ## Usage
 
 Here is a simple example of how to use the `nntpcli` package:
@@ -115,7 +117,7 @@ make generate
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions are welcome! Please open an issue or submit a pull request. See the [CONTRIBUTING.md](CONTRIBUTING.md) file for details.
 
 ## License
 

@@ -32,15 +32,14 @@ type Client interface {
 }
 
 type client struct {
-	timeout time.Duration
 	log     *slog.Logger
+	timeout time.Duration
 }
 
-func New(options ...Option) Client {
-	config := defaultConfig()
-	for _, option := range options {
-		option(config)
-	}
+func New(
+	c ...Config,
+) Client {
+	config := mergeWithDefault(c...)
 
 	return &client{
 		timeout: config.timeout,
@@ -116,6 +115,7 @@ func (c *client) DialTLS(
 	}
 
 	tlsConn := tls.Client(conn, &tls.Config{ServerName: host, InsecureSkipVerify: insecureSSL})
+
 	err = tlsConn.Handshake()
 	if err != nil {
 		return nil, err

@@ -6,27 +6,31 @@ import (
 )
 
 type Config struct {
-	timeout time.Duration
 	log     *slog.Logger
+	timeout time.Duration
 }
 
 type Option func(*Config)
 
-func defaultConfig() *Config {
-	return &Config{
-		timeout: time.Duration(5) * time.Second,
-		log:     slog.Default(),
-	}
+var configDefault = Config{
+	timeout: time.Duration(5) * time.Second,
+	log:     slog.Default(),
 }
 
-func WithTimeout(timeout time.Duration) Option {
-	return func(c *Config) {
-		c.timeout = timeout
+func mergeWithDefault(config ...Config) Config {
+	if len(config) == 0 {
+		return configDefault
 	}
-}
 
-func WithLogger(log *slog.Logger) Option {
-	return func(c *Config) {
-		c.log = log
+	cfg := config[0]
+
+	if cfg.timeout == 0 {
+		cfg.timeout = configDefault.timeout
 	}
+
+	if cfg.log == nil {
+		cfg.log = configDefault.log
+	}
+
+	return cfg
 }

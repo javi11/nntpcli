@@ -48,3 +48,12 @@ type Article struct {
 func (a *Article) MessageID() string {
 	return a.Header.Get("Message-Id")
 }
+
+func (a *Article) String() string {
+	id, ok := a.Header["Message-Id"]
+	if !ok {
+		return "[NNTP article]"
+	}
+
+	return fmt.Sprintf("[NNTP article %s]", id[0])
+}
