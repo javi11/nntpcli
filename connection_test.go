@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/javi11/nntpcli/test"
+
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
