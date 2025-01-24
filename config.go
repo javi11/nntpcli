@@ -6,15 +6,17 @@ import (
 )
 
 type Config struct {
-	log     *slog.Logger
-	timeout time.Duration
+	// Logger is the logger used by the client.
+	Logger *slog.Logger
+	// KeepAliveTime is the time that the client will keep the connection alive.
+	KeepAliveTime time.Duration
 }
 
 type Option func(*Config)
 
 var configDefault = Config{
-	timeout: time.Duration(5) * time.Second,
-	log:     slog.Default(),
+	KeepAliveTime: 10 * time.Minute,
+	Logger:        slog.Default(),
 }
 
 func mergeWithDefault(config ...Config) Config {
@@ -24,12 +26,12 @@ func mergeWithDefault(config ...Config) Config {
 
 	cfg := config[0]
 
-	if cfg.timeout == 0 {
-		cfg.timeout = configDefault.timeout
+	if cfg.KeepAliveTime == 0 {
+		cfg.KeepAliveTime = configDefault.KeepAliveTime
 	}
 
-	if cfg.log == nil {
-		cfg.log = configDefault.log
+	if cfg.Logger == nil {
+		cfg.Logger = configDefault.Logger
 	}
 
 	return cfg

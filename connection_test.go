@@ -69,6 +69,50 @@ func TestConnection_Body_Discarding_Bytes(t *testing.T) {
 	assert.Equal(t, int64(4), n)
 }
 
+func TestConnection_Capabilities(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	// Test getting capabilities
+	caps, err := conn.Capabilities()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, caps)
+
+	// Test capabilities response format
+	for _, cap := range caps {
+		assert.NotEmpty(t, cap)
+	}
+}
+
+func TestConnection_Stat(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	// Test successful stat
+	number, err := conn.Stat("1234")
+	assert.NoError(t, err)
+	assert.Greater(t, number, 0)
+
+	// Test stat with invalid message ID
+	_, err = conn.Stat("nonexistent")
+	assert.Error(t, err)
+}
+
+func TestConnection_Post_Error(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	// Test posting invalid article
+	invalidPost := bytes.NewBufferString("invalid post content")
+	err := conn.Post(invalidPost)
+	assert.Error(t, err)
+
+	// Test posting with closed writer
+	r, w := io.Pipe()
+	w.Close()
+
+	err = conn.Post(r)
+
+	assert.Error(t, err)
+}
+
 func articleReadyToDownload(t *testing.T) Connection {
 	wg := &sync.WaitGroup{}
 

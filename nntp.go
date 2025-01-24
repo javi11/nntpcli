@@ -20,30 +20,33 @@ type Client interface {
 		ctx context.Context,
 		host string,
 		port int,
-		maxAgeTime time.Time,
+		dialTimeout *time.Duration,
 	) (Connection, error)
 	DialTLS(
 		ctx context.Context,
 		host string,
 		port int,
 		insecureSSL bool,
-		maxAgeTime time.Time,
+		dialTimeout *time.Duration,
 	) (Connection, error)
 }
 
 type client struct {
-	log     *slog.Logger
-	timeout time.Duration
+	log           *slog.Logger
+	keepAliveTime time.Duration
 }
 
+// New creates a new NNTP client
+//
+// If no config is provided, the default config will be used
 func New(
 	c ...Config,
 ) Client {
 	config := mergeWithDefault(c...)
 
 	return &client{
-		timeout: config.timeout,
-		log:     config.log,
+		log:           config.Logger,
+		keepAliveTime: config.KeepAliveTime,
 	}
 }
 
@@ -52,9 +55,12 @@ func (c *client) Dial(
 	ctx context.Context,
 	host string,
 	port int,
-	maxAgeTime time.Time,
+	dialTimeout *time.Duration,
 ) (Connection, error) {
 	var d net.Dialer
+	if dialTimeout != nil {
+		d = net.Dialer{Timeout: *dialTimeout}
+	}
 
 	conn, err := d.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
@@ -66,9 +72,7 @@ func (c *client) Dial(
 		return nil, err
 	}
 
-	duration := time.Until(maxAgeTime)
-
-	err = conn.(*net.TCPConn).SetKeepAlivePeriod(duration)
+	err = conn.(*net.TCPConn).SetKeepAlivePeriod(c.keepAliveTime)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -78,6 +82,8 @@ func (c *client) Dial(
 	if err != nil {
 		return nil, err
 	}
+
+	maxAgeTime := time.Now().Add(c.keepAliveTime)
 
 	return newConnection(conn, maxAgeTime)
 }
@@ -87,9 +93,12 @@ func (c *client) DialTLS(
 	host string,
 	port int,
 	insecureSSL bool,
-	maxAgeTime time.Time,
+	dialTimeout *time.Duration,
 ) (Connection, error) {
 	var d net.Dialer
+	if dialTimeout != nil {
+		d = net.Dialer{Timeout: *dialTimeout}
+	}
 
 	conn, err := d.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
@@ -101,9 +110,7 @@ func (c *client) DialTLS(
 		return nil, err
 	}
 
-	duration := time.Until(maxAgeTime)
-
-	err = conn.(*net.TCPConn).SetKeepAlivePeriod(duration)
+	err = conn.(*net.TCPConn).SetKeepAlivePeriod(c.keepAliveTime)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -114,12 +121,17 @@ func (c *client) DialTLS(
 		return nil, err
 	}
 
-	tlsConn := tls.Client(conn, &tls.Config{ServerName: host, InsecureSkipVerify: insecureSSL})
+	tlsConn := tls.Client(conn, &tls.Config{
+		ServerName:         host,
+		InsecureSkipVerify: insecureSSL,
+	})
 
 	err = tlsConn.Handshake()
 	if err != nil {
 		return nil, err
 	}
+
+	maxAgeTime := time.Now().Add(c.keepAliveTime)
 
 	return newConnection(tlsConn, maxAgeTime)
 }

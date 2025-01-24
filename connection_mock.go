@@ -50,18 +50,18 @@ func (mr *MockConnectionMockRecorder) Authenticate(username, password interface{
 }
 
 // BodyDecoded mocks base method.
-func (m *MockConnection) BodyDecoded(msgId string, w io.Writer, discard int64) (int64, error) {
+func (m *MockConnection) BodyDecoded(msgID string, w io.Writer, discard int64) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BodyDecoded", msgId, w, discard)
+	ret := m.ctrl.Call(m, "BodyDecoded", msgID, w, discard)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BodyDecoded indicates an expected call of BodyDecoded.
-func (mr *MockConnectionMockRecorder) BodyDecoded(msgId, w, discard interface{}) *gomock.Call {
+func (mr *MockConnectionMockRecorder) BodyDecoded(msgID, w, discard interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BodyDecoded", reflect.TypeOf((*MockConnection)(nil).BodyDecoded), msgId, w, discard)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BodyDecoded", reflect.TypeOf((*MockConnection)(nil).BodyDecoded), msgID, w, discard)
 }
 
 // Capabilities mocks base method.
@@ -150,16 +150,16 @@ func (mr *MockConnectionMockRecorder) Post(r interface{}) *gomock.Call {
 }
 
 // Stat mocks base method.
-func (m *MockConnection) Stat(msgId string) (int, error) {
+func (m *MockConnection) Stat(msgID string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stat", msgId)
+	ret := m.ctrl.Call(m, "Stat", msgID)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Stat indicates an expected call of Stat.
-func (mr *MockConnectionMockRecorder) Stat(msgId interface{}) *gomock.Call {
+func (mr *MockConnectionMockRecorder) Stat(msgID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stat", reflect.TypeOf((*MockConnection)(nil).Stat), msgId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stat", reflect.TypeOf((*MockConnection)(nil).Stat), msgID)
 }
