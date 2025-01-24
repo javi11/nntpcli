@@ -1,13 +1,10 @@
 package nntpcli
 
 import (
-	"log/slog"
 	"time"
 )
 
 type Config struct {
-	// Logger is the logger used by the client.
-	Logger *slog.Logger
 	// KeepAliveTime is the time that the client will keep the connection alive.
 	KeepAliveTime time.Duration
 }
@@ -16,7 +13,6 @@ type Option func(*Config)
 
 var configDefault = Config{
 	KeepAliveTime: 10 * time.Minute,
-	Logger:        slog.Default(),
 }
 
 func mergeWithDefault(config ...Config) Config {
@@ -28,10 +24,6 @@ func mergeWithDefault(config ...Config) Config {
 
 	if cfg.KeepAliveTime == 0 {
 		cfg.KeepAliveTime = configDefault.KeepAliveTime
-	}
-
-	if cfg.Logger == nil {
-		cfg.Logger = configDefault.Logger
 	}
 
 	return cfg

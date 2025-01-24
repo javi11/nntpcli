@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net"
 	"time"
 )
@@ -34,7 +33,6 @@ type Client interface {
 }
 
 type client struct {
-	log           *slog.Logger
 	keepAliveTime time.Duration
 }
 
@@ -47,7 +45,6 @@ func New(
 	config := mergeWithDefault(c...)
 
 	return &client{
-		log:           config.Logger,
 		keepAliveTime: config.KeepAliveTime,
 	}
 }
