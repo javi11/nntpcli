@@ -61,24 +61,26 @@ func TestDial(t *testing.T) {
 	t.Run("Dial", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
 		dialTimeout := 5 * time.Second
-		conn, err := c.Dial(context.Background(), host, port, &dialTimeout)
+		keepAliveTime := 10 * time.Second
+		conn, err := c.Dial(context.Background(), host, port, &keepAliveTime, &dialTimeout)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 		assert.True(t, conn.MaxAgeTime().After(time.Now()))
+		assert.True(t, conn.MaxAgeTime().After(time.Now().Add(9*time.Second)))
 	})
 
 	// Test connection to non-existent server
 	t.Run("DialFail", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
 		dialTimeout := 5 * time.Second
-		_, err := c.Dial(context.Background(), "127.0.0.1", 12345, &dialTimeout)
+		_, err := c.Dial(context.Background(), "127.0.0.1", 12345, nil, &dialTimeout)
 		assert.Error(t, err)
 	})
 
 	// Test connection with nil timeout
 	t.Run("DialWithNilTimeout", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		conn, err := c.Dial(context.Background(), host, port, nil)
+		conn, err := c.Dial(context.Background(), host, port, nil, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
@@ -87,7 +89,7 @@ func TestDial(t *testing.T) {
 	t.Run("DialWithZeroTimeout", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
 		zeroTimeout := time.Duration(0)
-		conn, err := c.Dial(context.Background(), host, port, &zeroTimeout)
+		conn, err := c.Dial(context.Background(), host, port, nil, &zeroTimeout)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
@@ -100,7 +102,7 @@ func TestDial(t *testing.T) {
 
 		dialTimeout := 5 * time.Second
 
-		_, err := c.Dial(ctx, host, port, &dialTimeout)
+		_, err := c.Dial(ctx, host, port, nil, &dialTimeout)
 		assert.Error(t, err)
 	})
 }
@@ -160,7 +162,8 @@ func TestDialTLS(t *testing.T) {
 	t.Run("DialTLS", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
 		dialTimeout := 5 * time.Second
-		conn, err := c.DialTLS(context.Background(), host, port, true, &dialTimeout)
+		keepAliveTime := 10 * time.Second
+		conn, err := c.DialTLS(context.Background(), host, port, true, &keepAliveTime, &dialTimeout)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 		assert.True(t, conn.MaxAgeTime().After(time.Now()))
@@ -170,14 +173,14 @@ func TestDialTLS(t *testing.T) {
 	t.Run("DialTLSSecure", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
 		dialTimeout := 5 * time.Second
-		_, err := c.DialTLS(context.Background(), host, port, false, &dialTimeout)
+		_, err := c.DialTLS(context.Background(), host, port, false, nil, &dialTimeout)
 		assert.Error(t, err)
 	})
 
 	// Test TLS connection with nil timeout
 	t.Run("DialTLSWithNilTimeout", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		conn, err := c.DialTLS(context.Background(), host, port, true, nil)
+		conn, err := c.DialTLS(context.Background(), host, port, true, nil, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
@@ -191,7 +194,7 @@ func TestDialTLS(t *testing.T) {
 
 		dialTimeout := 5 * time.Second
 
-		_, err := c.DialTLS(ctx, host, port, true, &dialTimeout)
+		_, err := c.DialTLS(ctx, host, port, true, nil, &dialTimeout)
 		assert.Error(t, err)
 	})
 }
