@@ -87,9 +87,9 @@ func (c *client) Dial(
 	if keepAliveTime != nil {
 		keepAlive = *keepAliveTime
 	}
+
 	err = conn.(*net.TCPConn).SetKeepAlivePeriod(keepAlive)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -143,9 +143,9 @@ func (c *client) DialTLS(
 	if keepAliveTime != nil {
 		keepAlive = *keepAliveTime
 	}
+
 	err = conn.(*net.TCPConn).SetKeepAlivePeriod(keepAlive)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
