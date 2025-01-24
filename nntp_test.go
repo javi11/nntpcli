@@ -19,11 +19,14 @@ func TestDial(t *testing.T) {
 	assert.NoError(t, e)
 
 	var mx sync.RWMutex
+
 	closed := false
 
 	defer func() {
 		mx.Lock()
+
 		closed = true
+
 		mockServer.Close()
 		mx.Unlock()
 	}()
@@ -94,7 +97,9 @@ func TestDial(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
+
 		dialTimeout := 5 * time.Second
+
 		_, err := c.Dial(ctx, host, port, &dialTimeout)
 		assert.Error(t, err)
 	})
@@ -109,15 +114,18 @@ func TestDialTLS(t *testing.T) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	mockServer, e := tls.Listen("tcp", "127.0.0.1:0", config)
-	assert.NoError(t, e)
+	mockServer, err := tls.Listen("tcp", "127.0.0.1:0", config)
+	assert.NoError(t, err)
 
 	var mx sync.RWMutex
+
 	closed := false
 
 	defer func() {
 		mx.Lock()
+
 		closed = true
+
 		mockServer.Close()
 		mx.Unlock()
 	}()
@@ -132,8 +140,8 @@ func TestDialTLS(t *testing.T) {
 			}
 			mx.RUnlock()
 
-			conn, err := mockServer.Accept()
-			if err != nil {
+			conn, e := mockServer.Accept()
+			if e != nil {
 				return
 			}
 
@@ -177,9 +185,12 @@ func TestDialTLS(t *testing.T) {
 	// Test TLS connection with canceled context
 	t.Run("DialTLSWithCanceledContext", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
+
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
+
 		dialTimeout := 5 * time.Second
+
 		_, err := c.DialTLS(ctx, host, port, true, &dialTimeout)
 		assert.Error(t, err)
 	})

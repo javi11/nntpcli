@@ -36,31 +36,31 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // Dial mocks base method.
-func (m *MockClient) Dial(ctx context.Context, host string, port int, maxAgeTime time.Time) (Connection, error) {
+func (m *MockClient) Dial(ctx context.Context, host string, port int, dialTimeout *time.Duration) (Connection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Dial", ctx, host, port, maxAgeTime)
+	ret := m.ctrl.Call(m, "Dial", ctx, host, port, dialTimeout)
 	ret0, _ := ret[0].(Connection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Dial indicates an expected call of Dial.
-func (mr *MockClientMockRecorder) Dial(ctx, host, port, maxAgeTime interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) Dial(ctx, host, port, dialTimeout interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dial", reflect.TypeOf((*MockClient)(nil).Dial), ctx, host, port, maxAgeTime)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dial", reflect.TypeOf((*MockClient)(nil).Dial), ctx, host, port, dialTimeout)
 }
 
 // DialTLS mocks base method.
-func (m *MockClient) DialTLS(ctx context.Context, host string, port int, insecureSSL bool, maxAgeTime time.Time) (Connection, error) {
+func (m *MockClient) DialTLS(ctx context.Context, host string, port int, insecureSSL bool, dialTimeout *time.Duration) (Connection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DialTLS", ctx, host, port, insecureSSL, maxAgeTime)
+	ret := m.ctrl.Call(m, "DialTLS", ctx, host, port, insecureSSL, dialTimeout)
 	ret0, _ := ret[0].(Connection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DialTLS indicates an expected call of DialTLS.
-func (mr *MockClientMockRecorder) DialTLS(ctx, host, port, insecureSSL, maxAgeTime interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) DialTLS(ctx, host, port, insecureSSL, dialTimeout interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialTLS", reflect.TypeOf((*MockClient)(nil).DialTLS), ctx, host, port, insecureSSL, maxAgeTime)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialTLS", reflect.TypeOf((*MockClient)(nil).DialTLS), ctx, host, port, insecureSSL, dialTimeout)
 }

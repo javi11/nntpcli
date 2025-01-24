@@ -107,7 +107,9 @@ func TestConnection_Post_Error(t *testing.T) {
 	// Test posting with closed writer
 	r, w := io.Pipe()
 	w.Close()
+
 	err = conn.Post(r)
+
 	assert.Error(t, err)
 }
 
