@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net"
 	"time"
 )
@@ -20,6 +19,7 @@ type Client interface {
 		ctx context.Context,
 		host string,
 		port int,
+		keepAliveTime *time.Duration,
 		dialTimeout *time.Duration,
 	) (Connection, error)
 	DialTLS(
@@ -27,12 +27,12 @@ type Client interface {
 		host string,
 		port int,
 		insecureSSL bool,
+		keepAliveTime *time.Duration,
 		dialTimeout *time.Duration,
 	) (Connection, error)
 }
 
 type client struct {
-	log           *slog.Logger
 	keepAliveTime time.Duration
 }
 
@@ -45,16 +45,27 @@ func New(
 	config := mergeWithDefault(c...)
 
 	return &client{
-		log:           config.Logger,
 		keepAliveTime: config.KeepAliveTime,
 	}
 }
 
-// Dial connects to an NNTP server
+// Dial connects to an NNTP server using a plain TCP connection.
+//
+// Parameters:
+//   - ctx: Context for controlling the connection lifecycle
+//   - host: The hostname or IP address of the NNTP server
+//   - port: The port number of the NNTP server
+//   - keepAliveTime: Optional duration to override the default keep-alive time
+//   - dialTimeout: Optional timeout duration for the initial connection
+//
+// Returns:
+//   - Connection: An NNTP connection interface if successful
+//   - error: Any error encountered during connection
 func (c *client) Dial(
 	ctx context.Context,
 	host string,
 	port int,
+	keepAliveTime *time.Duration,
 	dialTimeout *time.Duration,
 ) (Connection, error) {
 	var d net.Dialer
@@ -72,9 +83,13 @@ func (c *client) Dial(
 		return nil, err
 	}
 
-	err = conn.(*net.TCPConn).SetKeepAlivePeriod(c.keepAliveTime)
+	keepAlive := c.keepAliveTime
+	if keepAliveTime != nil {
+		keepAlive = *keepAliveTime
+	}
+
+	err = conn.(*net.TCPConn).SetKeepAlivePeriod(keepAlive)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -83,16 +98,30 @@ func (c *client) Dial(
 		return nil, err
 	}
 
-	maxAgeTime := time.Now().Add(c.keepAliveTime)
+	maxAgeTime := time.Now().Add(keepAlive)
 
 	return newConnection(conn, maxAgeTime)
 }
 
+// DialTLS connects to an NNTP server using a TLS-encrypted connection.
+//
+// Parameters:
+//   - ctx: Context for controlling the connection lifecycle
+//   - host: The hostname or IP address of the NNTP server
+//   - port: The port number of the NNTP server
+//   - insecureSSL: If true, skips verification of the server's certificate chain and host name
+//   - keepAliveTime: Optional duration to override the default keep-alive time
+//   - dialTimeout: Optional timeout duration for the initial connection
+//
+// Returns:
+//   - Connection: An NNTP connection interface if successful
+//   - error: Any error encountered during connection
 func (c *client) DialTLS(
 	ctx context.Context,
 	host string,
 	port int,
 	insecureSSL bool,
+	keepAliveTime *time.Duration,
 	dialTimeout *time.Duration,
 ) (Connection, error) {
 	var d net.Dialer
@@ -110,9 +139,13 @@ func (c *client) DialTLS(
 		return nil, err
 	}
 
-	err = conn.(*net.TCPConn).SetKeepAlivePeriod(c.keepAliveTime)
+	keepAlive := c.keepAliveTime
+	if keepAliveTime != nil {
+		keepAlive = *keepAliveTime
+	}
+
+	err = conn.(*net.TCPConn).SetKeepAlivePeriod(keepAlive)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -131,7 +164,7 @@ func (c *client) DialTLS(
 		return nil, err
 	}
 
-	maxAgeTime := time.Now().Add(c.keepAliveTime)
+	maxAgeTime := time.Now().Add(keepAlive)
 
 	return newConnection(tlsConn, maxAgeTime)
 }
