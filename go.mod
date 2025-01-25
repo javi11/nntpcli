@@ -3,10 +3,10 @@ module github.com/javi11/nntpcli
 go 1.23.4
 
 require (
-	github.com/golang/mock v1.6.0
 	github.com/javi11/nntp-server-mock v0.0.1
 	github.com/mnightingale/rapidyenc v0.0.0-20240809192858-2494683cdd67
 	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.0
 	golang.org/x/net v0.32.0
 )
 
