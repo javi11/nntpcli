@@ -1,4 +1,4 @@
-//go:generate mockgen -source=./connection.go -destination=./connection_mock.go -package=nntpcli Connection
+//go:generate .tools/mockgen -source=./connection.go -destination=./connection_mock.go -package=nntpcli Connection
 package nntpcli
 
 import (
