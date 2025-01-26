@@ -12,7 +12,6 @@ package nntpcli
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,31 +41,41 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // Dial mocks base method.
-func (m *MockClient) Dial(ctx context.Context, host string, port int, keepAliveTime, dialTimeout *time.Duration) (Connection, error) {
+func (m *MockClient) Dial(ctx context.Context, host string, port int, config ...DialConfig) (Connection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Dial", ctx, host, port, keepAliveTime, dialTimeout)
+	varargs := []any{ctx, host, port}
+	for _, a := range config {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Dial", varargs...)
 	ret0, _ := ret[0].(Connection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Dial indicates an expected call of Dial.
-func (mr *MockClientMockRecorder) Dial(ctx, host, port, keepAliveTime, dialTimeout any) *gomock.Call {
+func (mr *MockClientMockRecorder) Dial(ctx, host, port any, config ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dial", reflect.TypeOf((*MockClient)(nil).Dial), ctx, host, port, keepAliveTime, dialTimeout)
+	varargs := append([]any{ctx, host, port}, config...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dial", reflect.TypeOf((*MockClient)(nil).Dial), varargs...)
 }
 
 // DialTLS mocks base method.
-func (m *MockClient) DialTLS(ctx context.Context, host string, port int, insecureSSL bool, keepAliveTime, dialTimeout *time.Duration) (Connection, error) {
+func (m *MockClient) DialTLS(ctx context.Context, host string, port int, insecureSSL bool, config ...DialConfig) (Connection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DialTLS", ctx, host, port, insecureSSL, keepAliveTime, dialTimeout)
+	varargs := []any{ctx, host, port, insecureSSL}
+	for _, a := range config {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DialTLS", varargs...)
 	ret0, _ := ret[0].(Connection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DialTLS indicates an expected call of DialTLS.
-func (mr *MockClientMockRecorder) DialTLS(ctx, host, port, insecureSSL, keepAliveTime, dialTimeout any) *gomock.Call {
+func (mr *MockClientMockRecorder) DialTLS(ctx, host, port, insecureSSL any, config ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialTLS", reflect.TypeOf((*MockClient)(nil).DialTLS), ctx, host, port, insecureSSL, keepAliveTime, dialTimeout)
+	varargs := append([]any{ctx, host, port, insecureSSL}, config...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialTLS", reflect.TypeOf((*MockClient)(nil).DialTLS), varargs...)
 }

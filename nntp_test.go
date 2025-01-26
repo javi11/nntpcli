@@ -60,9 +60,11 @@ func TestDial(t *testing.T) {
 	// Test successful connection
 	t.Run("Dial", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		dialTimeout := 5 * time.Second
-		keepAliveTime := 10 * time.Second
-		conn, err := c.Dial(context.Background(), host, port, &keepAliveTime, &dialTimeout)
+		config := DialConfig{
+			KeepAliveTime: 10 * time.Second,
+			DialTimeout:   5 * time.Second,
+		}
+		conn, err := c.Dial(context.Background(), host, port, config)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 		assert.True(t, conn.MaxAgeTime().After(time.Now()))
@@ -72,15 +74,17 @@ func TestDial(t *testing.T) {
 	// Test connection to non-existent server
 	t.Run("DialFail", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		dialTimeout := 5 * time.Second
-		_, err := c.Dial(context.Background(), "127.0.0.1", 12345, nil, &dialTimeout)
+		config := DialConfig{
+			DialTimeout: 5 * time.Second,
+		}
+		_, err := c.Dial(context.Background(), "127.0.0.1", 12345, config)
 		assert.Error(t, err)
 	})
 
 	// Test connection with nil timeout
 	t.Run("DialWithNilTimeout", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		conn, err := c.Dial(context.Background(), host, port, nil, nil)
+		conn, err := c.Dial(context.Background(), host, port, DialConfig{})
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
@@ -88,8 +92,10 @@ func TestDial(t *testing.T) {
 	// Test connection with zero timeout
 	t.Run("DialWithZeroTimeout", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		zeroTimeout := time.Duration(0)
-		conn, err := c.Dial(context.Background(), host, port, nil, &zeroTimeout)
+		config := DialConfig{
+			DialTimeout: time.Duration(0),
+		}
+		conn, err := c.Dial(context.Background(), host, port, config)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
@@ -100,9 +106,10 @@ func TestDial(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		dialTimeout := 5 * time.Second
-
-		_, err := c.Dial(ctx, host, port, nil, &dialTimeout)
+		config := DialConfig{
+			DialTimeout: 5 * time.Second,
+		}
+		_, err := c.Dial(ctx, host, port, config)
 		assert.Error(t, err)
 	})
 }
@@ -161,9 +168,11 @@ func TestDialTLS(t *testing.T) {
 	// Test successful TLS connection with insecure SSL
 	t.Run("DialTLS", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		dialTimeout := 5 * time.Second
-		keepAliveTime := 10 * time.Second
-		conn, err := c.DialTLS(context.Background(), host, port, true, &keepAliveTime, &dialTimeout)
+		config := DialConfig{
+			KeepAliveTime: 10 * time.Second,
+			DialTimeout:   5 * time.Second,
+		}
+		conn, err := c.DialTLS(context.Background(), host, port, true, config)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 		assert.True(t, conn.MaxAgeTime().After(time.Now()))
@@ -172,15 +181,17 @@ func TestDialTLS(t *testing.T) {
 	// Test TLS connection with secure SSL (should fail with self-signed cert)
 	t.Run("DialTLSSecure", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		dialTimeout := 5 * time.Second
-		_, err := c.DialTLS(context.Background(), host, port, false, nil, &dialTimeout)
+		config := DialConfig{
+			DialTimeout: 5 * time.Second,
+		}
+		_, err := c.DialTLS(context.Background(), host, port, false, config)
 		assert.Error(t, err)
 	})
 
 	// Test TLS connection with nil timeout
 	t.Run("DialTLSWithNilTimeout", func(t *testing.T) {
 		c := &client{keepAliveTime: 5 * time.Second}
-		conn, err := c.DialTLS(context.Background(), host, port, true, nil, nil)
+		conn, err := c.DialTLS(context.Background(), host, port, true, DialConfig{})
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
@@ -192,9 +203,10 @@ func TestDialTLS(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		dialTimeout := 5 * time.Second
-
-		_, err := c.DialTLS(ctx, host, port, true, nil, &dialTimeout)
+		config := DialConfig{
+			DialTimeout: 5 * time.Second,
+		}
+		_, err := c.DialTLS(ctx, host, port, true, config)
 		assert.Error(t, err)
 	})
 }
