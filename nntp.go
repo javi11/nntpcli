@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type DialConfig struct {
+	KeepAliveTime time.Duration
+	DialTimeout   time.Duration
+}
+
 type TimeData struct {
 	Milliseconds int64
 	Bytes        int
@@ -19,16 +24,14 @@ type Client interface {
 		ctx context.Context,
 		host string,
 		port int,
-		keepAliveTime *time.Duration,
-		dialTimeout *time.Duration,
+		config ...DialConfig,
 	) (Connection, error)
 	DialTLS(
 		ctx context.Context,
 		host string,
 		port int,
 		insecureSSL bool,
-		keepAliveTime *time.Duration,
-		dialTimeout *time.Duration,
+		config ...DialConfig,
 	) (Connection, error)
 }
 
@@ -65,12 +68,13 @@ func (c *client) Dial(
 	ctx context.Context,
 	host string,
 	port int,
-	keepAliveTime *time.Duration,
-	dialTimeout *time.Duration,
+	config ...DialConfig,
 ) (Connection, error) {
+	cfg := config[0]
+
 	var d net.Dialer
-	if dialTimeout != nil {
-		d = net.Dialer{Timeout: *dialTimeout}
+	if cfg.DialTimeout != 0 {
+		d = net.Dialer{Timeout: cfg.DialTimeout}
 	}
 
 	conn, err := d.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", host, port))
@@ -84,8 +88,8 @@ func (c *client) Dial(
 	}
 
 	keepAlive := c.keepAliveTime
-	if keepAliveTime != nil {
-		keepAlive = *keepAliveTime
+	if cfg.KeepAliveTime != 0 {
+		keepAlive = cfg.KeepAliveTime
 	}
 
 	err = conn.(*net.TCPConn).SetKeepAlivePeriod(keepAlive)
@@ -121,12 +125,13 @@ func (c *client) DialTLS(
 	host string,
 	port int,
 	insecureSSL bool,
-	keepAliveTime *time.Duration,
-	dialTimeout *time.Duration,
+	config ...DialConfig,
 ) (Connection, error) {
+	cfg := config[0]
+
 	var d net.Dialer
-	if dialTimeout != nil {
-		d = net.Dialer{Timeout: *dialTimeout}
+	if cfg.DialTimeout != 0 {
+		d = net.Dialer{Timeout: cfg.DialTimeout}
 	}
 
 	conn, err := d.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", host, port))
@@ -140,8 +145,8 @@ func (c *client) DialTLS(
 	}
 
 	keepAlive := c.keepAliveTime
-	if keepAliveTime != nil {
-		keepAlive = *keepAliveTime
+	if cfg.KeepAliveTime != 0 {
+		keepAlive = cfg.KeepAliveTime
 	}
 
 	err = conn.(*net.TCPConn).SetKeepAlivePeriod(keepAlive)

@@ -32,7 +32,7 @@ import (
 
 func main() {
     client := nntpcli.New()
-    conn, err := client.Dial(context.Background(), "news.example.com", 119, nil)
+    conn, err := client.Dial(context.Background(), "news.example.com", 119)
     if err != nil {
         log.Fatal(err)
     }
