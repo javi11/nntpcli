@@ -10,6 +10,7 @@ var (
 	ErrNoSuchCapability        = errors.New("no such capability")
 	ErrNilNttpConn             = errors.New("nil nntp connection")
 	ErrArticleNotFound         = errors.New("article not found")
+	ErrSegmentAlreadyExists    = errors.New("segment already exists")
 )
 
 const (
@@ -23,6 +24,15 @@ func IsArticleNotFoundError(err error) bool {
 	var nntpErr *textproto.Error
 	if ok := errors.As(err, &nntpErr); ok {
 		return nntpErr.Code == 430
+	}
+
+	return false
+}
+
+func IsSegmentAlreadyExistsError(err error) bool {
+	var nntpErr *textproto.Error
+	if ok := errors.As(err, &nntpErr); ok {
+		return nntpErr.Code == 441
 	}
 
 	return false
