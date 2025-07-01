@@ -154,9 +154,8 @@ func (c *connection) BodyDecoded(msgID string, w io.Writer, discard int64) (int6
 		return 0, err
 	}
 
-	dec := rapidyenc.AcquireDecoder()
+	dec := rapidyenc.AcquireDecoder(c.conn.R)
 	defer rapidyenc.ReleaseDecoder(dec)
-	dec.SetReader(c.conn.R)
 
 	// Discard the first n lines
 	if discard > 0 {
