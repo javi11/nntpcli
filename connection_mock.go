@@ -71,10 +71,10 @@ func (mr *MockConnectionMockRecorder) BodyDecoded(msgID, w, discard any) *gomock
 }
 
 // BodyReader mocks base method.
-func (m *MockConnection) BodyReader(msgID string) (io.ReadCloser, error) {
+func (m *MockConnection) BodyReader(msgID string) (ArticleBodyReader, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BodyReader", msgID)
-	ret0, _ := ret[0].(io.ReadCloser)
+	ret0, _ := ret[0].(ArticleBodyReader)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
