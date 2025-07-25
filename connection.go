@@ -39,13 +39,13 @@ type YencHeaders struct {
 }
 
 type ArticleBodyReader struct {
-	decoder       *rapidyenc.Decoder
-	conn          *connection
-	responseID    uint
-	buffer        *bytes.Buffer
-	headersRead   bool
-	yencHeaders   *YencHeaders
-	closed        bool
+	decoder     *rapidyenc.Decoder
+	conn        *connection
+	responseID  uint
+	buffer      *bytes.Buffer
+	headersRead bool
+	yencHeaders *YencHeaders
+	closed      bool
 }
 
 func (r *ArticleBodyReader) Read(p []byte) (n int, err error) {
@@ -66,18 +66,22 @@ func (r *ArticleBodyReader) Read(p []byte) (n int, err error) {
 	return r.decoder.Read(p)
 }
 
-func (r *ArticleBodyReader) GetYencHeaders() *YencHeaders {
+func (r *ArticleBodyReader) GetYencHeaders() (YencHeaders, error) {
 	if r.yencHeaders != nil {
-		return r.yencHeaders
+		return *r.yencHeaders, nil
 	}
 
 	if !r.headersRead {
 		buf := make([]byte, 4096)
-		n, _ := r.decoder.Read(buf)
+		n, err := r.decoder.Read(buf)
 		if n > 0 {
 			r.buffer = bytes.NewBuffer(buf[:n])
 		}
 		r.headersRead = true
+
+		if err != nil {
+			return YencHeaders{}, err
+		}
 	}
 
 	r.yencHeaders = &YencHeaders{
@@ -90,7 +94,7 @@ func (r *ArticleBodyReader) GetYencHeaders() *YencHeaders {
 		Hash:       r.decoder.Meta.Hash,
 	}
 
-	return r.yencHeaders
+	return *r.yencHeaders, nil
 }
 
 func (r *ArticleBodyReader) Close() error {
