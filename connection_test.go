@@ -152,10 +152,7 @@ func TestArticleBodyReader_GetYencHeaders(t *testing.T) {
 		_ = reader.Close()
 	}()
 
-	articleReader, ok := reader.(*ArticleBodyReader)
-	assert.True(t, ok)
-
-	headers, err := articleReader.GetYencHeaders()
+	headers, err := reader.GetYencHeaders()
 	assert.NoError(t, err)
 	assert.Equal(t, "webutils_pl", headers.FileName)
 	assert.Equal(t, int64(9), headers.FileSize)
@@ -173,10 +170,7 @@ func TestArticleBodyReader_GetYencHeaders_ReturnsBufferedData(t *testing.T) {
 		_ = reader.Close()
 	}()
 
-	articleReader, ok := reader.(*ArticleBodyReader)
-	assert.True(t, ok)
-
-	_, err = articleReader.GetYencHeaders()
+	_, err = reader.GetYencHeaders()
 	assert.NoError(t, err)
 
 	buf := make([]byte, 1024)
@@ -243,10 +237,7 @@ func TestArticleBodyReader_ReadAfterGetYencHeaders(t *testing.T) {
 		_ = reader.Close()
 	}()
 
-	articleReader, ok := reader.(*ArticleBodyReader)
-	assert.True(t, ok)
-
-	headers, err := articleReader.GetYencHeaders()
+	headers, err := reader.GetYencHeaders()
 	assert.NoError(t, err)
 	assert.Equal(t, "webutils_pl", headers.FileName)
 
