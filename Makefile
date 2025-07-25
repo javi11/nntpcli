@@ -1,50 +1,29 @@
 GO ?= go
-TOOLS = $(CURDIR)/.tools
 
 .DEFAULT_GOAL := check
 
-$(TOOLS):
-	@mkdir -p $@
-$(TOOLS)/%: | $(TOOLS)
-	@GOBIN=$(TOOLS) go install $(PACKAGE)
-
-GOLANGCI_LINT = $(TOOLS)/golangci-lint
-$(GOLANGCI_LINT): PACKAGE=github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-JUNIT = $(TOOLS)/junit
-$(JUNIT): PACKAGE=github.com/jstemmer/go-junit-report/v2@latest
-
-GOVULNCHECK = $(TOOLS)/govulncheck
-$(GOVULNCHECK): PACKAGE=golang.org/x/vuln/cmd/govulncheck@latest
-
-GOMOCKGEN = $(TOOLS)/mockgen
-$(GOMOCKGEN): PACKAGE=go.uber.org/mock/mockgen@latest
-
 .PHONY: generate
-generate: tools
+generate:
 	go generate ./...
 
 .PHONY: govulncheck
-govulncheck: | $(GOVULNCHECK)
-	@$(TOOLS)/govulncheck ./...
+govulncheck:
+	go tool govulncheck ./...
 
 .PHONY: tidy go-mod-tidy
 tidy: go-mod-tidy
 go-mod-tidy:
 	$(GO) mod tidy
 
-.PHONY: tools
-tools: $(GOLANGCI_LINT) $(JUNIT) $(GOVULNCHECK) $(GOMOCKGEN)
-
 .PHONY: golangci-lint golangci-lint-fix
 golangci-lint-fix: ARGS=--fix
 golangci-lint-fix: golangci-lint
-golangci-lint: | $(GOLANGCI_LINT)
-	@$(TOOLS)/golangci-lint run $(ARGS)
+golangci-lint:
+	go tool golangci-lint run $(ARGS)
 
 .PHONY: junit
 junit: | $(JUNIT)
-	mkdir -p ./test-results && $(GO) test -v 2>&1 ./... | $(TOOLS)/go-junit-report -set-exit-code > ./test-results/report.xml
+	mkdir -p ./test-results && $(GO) test -v 2>&1 ./... | go tool go-junit-report -set-exit-code > ./test-results/report.xml
 
 .PHONY: coverage
 coverage:
@@ -57,6 +36,14 @@ coverage-html: coverage
 .PHONY: coverage-func
 coverage-func: coverage
 	$(GO) tool cover -func=coverage.out
+
+.PHONY: coverage-ci
+coverage-ci:
+	$(GO) test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+.PHONY: coverage-total
+coverage-total: coverage
+	@$(GO) tool cover -func=coverage.out | grep total | awk '{print $$3}' | sed 's/%//'
 
 .PHONY: lint
 lint: go-mod-tidy golangci-lint
@@ -74,3 +61,15 @@ check: generate go-mod-tidy golangci-lint test-race
 git-hooks:
 	@echo '#!/bin/sh\nmake' > .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
+
+.PHONY: release
+release:
+	goreleaser --skip-validate --skip-publish --rm-dist
+
+.PHONY: snapshot
+snapshot:
+	goreleaser --skip-docker --snapshot --skip-publish --rm-dist 
+
+.PHONY: publish
+publish:
+	goreleaser --rm-dist

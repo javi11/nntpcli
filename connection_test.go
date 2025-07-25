@@ -40,7 +40,7 @@ func TestConnection_Body_Closed_Before_Full_Read_Drains_The_Buffer(t *testing.T)
 	conn := articleReadyToDownload(t)
 
 	_, w := io.Pipe()
-	w.Close()
+	_ = w.Close()
 
 	n, err := conn.BodyDecoded("1234", w, 0)
 	assert.ErrorIs(t, err, io.ErrClosedPipe)
@@ -106,11 +106,155 @@ func TestConnection_Post_Error(t *testing.T) {
 
 	// Test posting with closed writer
 	r, w := io.Pipe()
-	w.Close()
+	_ = w.Close()
 
 	err = conn.Post(r)
 
 	assert.Error(t, err)
+}
+
+func TestConnection_BodyReader(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("1234")
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	var result bytes.Buffer
+	n, err := io.Copy(&result, reader)
+	if err != nil && err != io.EOF {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	assert.Equal(t, int64(9), n)
+	assert.Equal(t, "test text", result.String())
+}
+
+func TestConnection_BodyReader_InvalidMessageID(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("nonexistent")
+	assert.Error(t, err)
+	assert.Nil(t, reader)
+}
+
+func TestArticleBodyReader_GetYencHeaders(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("1234")
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	articleReader, ok := reader.(*ArticleBodyReader)
+	assert.True(t, ok)
+
+	headers, err := articleReader.GetYencHeaders()
+	assert.NoError(t, err)
+	assert.Equal(t, "webutils_pl", headers.FileName)
+	assert.Equal(t, int64(9), headers.FileSize)
+	assert.Equal(t, uint32(0x4570fa16), headers.Hash)
+}
+
+func TestArticleBodyReader_GetYencHeaders_ReturnsBufferedData(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("1234")
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	articleReader, ok := reader.(*ArticleBodyReader)
+	assert.True(t, ok)
+
+	_, err = articleReader.GetYencHeaders()
+	assert.NoError(t, err)
+
+	buf := make([]byte, 1024)
+	n, err := reader.Read(buf)
+	assert.NoError(t, err)
+	assert.Equal(t, 9, n)
+	assert.Equal(t, "test text", string(buf[:n]))
+}
+
+func TestArticleBodyReader_Read_MultipleReads(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("1234")
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	buf1 := make([]byte, 4)
+	n1, err := reader.Read(buf1)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, n1)
+
+	buf2 := make([]byte, 10)
+	n2, err := reader.Read(buf2)
+	if err != nil && err != io.EOF {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	assert.Equal(t, 5, n2)
+
+	combined := string(buf1[:n1]) + string(buf2[:n2])
+	assert.Equal(t, "test text", combined)
+}
+
+func TestArticleBodyReader_Close(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("1234")
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	err = reader.Close()
+	assert.NoError(t, err)
+
+	buf := make([]byte, 1024)
+	n, err := reader.Read(buf)
+	assert.Equal(t, 0, n)
+	assert.Equal(t, io.EOF, err)
+
+	err = reader.Close()
+	assert.NoError(t, err)
+}
+
+func TestArticleBodyReader_ReadAfterGetYencHeaders(t *testing.T) {
+	conn := articleReadyToDownload(t)
+
+	reader, err := conn.BodyReader("1234")
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	articleReader, ok := reader.(*ArticleBodyReader)
+	assert.True(t, ok)
+
+	headers, err := articleReader.GetYencHeaders()
+	assert.NoError(t, err)
+	assert.Equal(t, "webutils_pl", headers.FileName)
+
+	var result bytes.Buffer
+	n, err := io.Copy(&result, reader)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(9), n)
+	assert.Equal(t, "test text", result.String())
 }
 
 func articleReadyToDownload(t *testing.T) Connection {
@@ -145,7 +289,7 @@ func articleReadyToDownload(t *testing.T) Connection {
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {
-		conn.Close()
+		_ = conn.Close()
 	})
 
 	err = conn.JoinGroup("misc.test")

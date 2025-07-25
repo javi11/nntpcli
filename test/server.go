@@ -62,8 +62,8 @@ func (s Server) Port() int {
 }
 
 func (s Server) Close() {
-	s.l.Close()
-	s.backend.Close()
+	_ = s.l.Close()
+	_ = s.backend.Close()
 }
 
 func maybefatal(err error, f string, a ...interface{}) {

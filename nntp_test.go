@@ -27,7 +27,7 @@ func TestDial(t *testing.T) {
 
 		closed = true
 
-		mockServer.Close()
+		_ = mockServer.Close()
 		mx.Unlock()
 	}()
 
@@ -47,7 +47,7 @@ func TestDial(t *testing.T) {
 			}
 
 			_, _ = conn.Write([]byte("200 mock server ready\r\n"))
-			conn.Close()
+			_ = conn.Close()
 		}
 	}()
 
@@ -135,7 +135,7 @@ func TestDialTLS(t *testing.T) {
 
 		closed = true
 
-		mockServer.Close()
+		_ = mockServer.Close()
 		mx.Unlock()
 	}()
 
@@ -155,7 +155,7 @@ func TestDialTLS(t *testing.T) {
 			}
 
 			_, _ = conn.Write([]byte("200 mock server ready\r\n"))
-			conn.Close()
+			_ = conn.Close()
 		}
 	}()
 
