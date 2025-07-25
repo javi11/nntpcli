@@ -40,7 +40,7 @@ func TestConnection_Body_Closed_Before_Full_Read_Drains_The_Buffer(t *testing.T)
 	conn := articleReadyToDownload(t)
 
 	_, w := io.Pipe()
-	w.Close()
+	_ = w.Close()
 
 	n, err := conn.BodyDecoded("1234", w, 0)
 	assert.ErrorIs(t, err, io.ErrClosedPipe)
@@ -106,7 +106,7 @@ func TestConnection_Post_Error(t *testing.T) {
 
 	// Test posting with closed writer
 	r, w := io.Pipe()
-	w.Close()
+	_ = w.Close()
 
 	err = conn.Post(r)
 
@@ -120,7 +120,9 @@ func TestConnection_BodyReader(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	var result bytes.Buffer
 	n, err := io.Copy(&result, reader)
@@ -146,7 +148,9 @@ func TestArticleBodyReader_GetYencHeaders(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	articleReader, ok := reader.(*ArticleBodyReader)
 	assert.True(t, ok)
@@ -165,12 +169,14 @@ func TestArticleBodyReader_GetYencHeaders_ReturnsBufferedData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	articleReader, ok := reader.(*ArticleBodyReader)
 	assert.True(t, ok)
 
-	headers, err := articleReader.GetYencHeaders()
+	_, err = articleReader.GetYencHeaders()
 	assert.NoError(t, err)
 
 	buf := make([]byte, 1024)
@@ -187,7 +193,9 @@ func TestArticleBodyReader_Read_MultipleReads(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	buf1 := make([]byte, 4)
 	n1, err := reader.Read(buf1)
@@ -231,7 +239,9 @@ func TestArticleBodyReader_ReadAfterGetYencHeaders(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	articleReader, ok := reader.(*ArticleBodyReader)
 	assert.True(t, ok)
@@ -279,7 +289,7 @@ func articleReadyToDownload(t *testing.T) Connection {
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {
-		conn.Close()
+		_ = conn.Close()
 	})
 
 	err = conn.JoinGroup("misc.test")

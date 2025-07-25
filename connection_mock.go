@@ -70,6 +70,21 @@ func (mr *MockConnectionMockRecorder) BodyDecoded(msgID, w, discard any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BodyDecoded", reflect.TypeOf((*MockConnection)(nil).BodyDecoded), msgID, w, discard)
 }
 
+// BodyReader mocks base method.
+func (m *MockConnection) BodyReader(msgID string) (io.ReadCloser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BodyReader", msgID)
+	ret0, _ := ret[0].(io.ReadCloser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BodyReader indicates an expected call of BodyReader.
+func (mr *MockConnectionMockRecorder) BodyReader(msgID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BodyReader", reflect.TypeOf((*MockConnection)(nil).BodyReader), msgID)
+}
+
 // Capabilities mocks base method.
 func (m *MockConnection) Capabilities() ([]string, error) {
 	m.ctrl.T.Helper()

@@ -79,7 +79,7 @@ func (r *ArticleBodyReader) GetYencHeaders() (YencHeaders, error) {
 		}
 		r.headersRead = true
 
-		if err != nil {
+		if err != nil && err != io.EOF {
 			return YencHeaders{}, err
 		}
 	}
@@ -139,7 +139,7 @@ func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
 			}, nil
 		}
 
-		conn.Close()
+		_ = conn.Close()
 
 		return nil, err
 	}
@@ -309,7 +309,9 @@ func (c *connection) Post(r io.Reader) error {
 		return err
 	}
 
-	w.Close()
+	if err := w.Close(); err != nil {
+		return err
+	}
 
 	_, _, err = c.conn.ReadCodeLine(240)
 
