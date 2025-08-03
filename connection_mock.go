@@ -128,6 +128,20 @@ func (mr *MockConnectionMockRecorder) CurrentJoinedGroup() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentJoinedGroup", reflect.TypeOf((*MockConnection)(nil).CurrentJoinedGroup))
 }
 
+// GetMetrics mocks base method.
+func (m *MockConnection) GetMetrics() *Metrics {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMetrics")
+	ret0, _ := ret[0].(*Metrics)
+	return ret0
+}
+
+// GetMetrics indicates an expected call of GetMetrics.
+func (mr *MockConnectionMockRecorder) GetMetrics() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetrics", reflect.TypeOf((*MockConnection)(nil).GetMetrics))
+}
+
 // JoinGroup mocks base method.
 func (m *MockConnection) JoinGroup(name string) error {
 	m.ctrl.T.Helper()

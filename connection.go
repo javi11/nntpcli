@@ -25,6 +25,7 @@ type Connection interface {
 	MaxAgeTime() time.Time
 	Stat(msgID string) (int, error)
 	Capabilities() ([]string, error)
+	GetMetrics() *Metrics
 }
 
 type connection struct {
@@ -32,6 +33,7 @@ type connection struct {
 	netconn            net.Conn
 	conn               *textproto.Conn
 	currentJoinedGroup string
+	metrics            *Metrics
 }
 
 func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
@@ -46,6 +48,7 @@ func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
 				conn:       conn,
 				netconn:    netconn,
 				maxAgeTime: maxAgeTime,
+				metrics:    NewMetrics(),
 			}, nil
 		}
 
@@ -58,6 +61,7 @@ func newConnection(netconn net.Conn, maxAgeTime time.Time) (Connection, error) {
 		conn:       conn,
 		netconn:    netconn,
 		maxAgeTime: maxAgeTime,
+		metrics:    NewMetrics(),
 	}, nil
 }
 
@@ -77,28 +81,34 @@ func (c *connection) Close() error {
 func (c *connection) Authenticate(username, password string) (err error) {
 	code, _, err := c.sendCmd(381, "AUTHINFO USER %s", username)
 	if err != nil {
+		c.metrics.RecordAuth(false)
 		return err
 	}
 
 	switch code {
 	case 481, 482, 502:
 		// failed, out of sequence or command not available
+		c.metrics.RecordAuth(false)
 		return err
 	case 281:
 		// accepted without password
+		c.metrics.RecordAuth(true)
 		return nil
 	case 381:
 		// need password
 		break
 	default:
+		c.metrics.RecordAuth(false)
 		return err
 	}
 
 	_, _, err = c.sendCmd(281, "AUTHINFO PASS %s", password)
 	if err != nil {
+		c.metrics.RecordAuth(false)
 		return err
 	}
 
+	c.metrics.RecordAuth(true)
 	return nil
 }
 
@@ -113,6 +123,7 @@ func (c *connection) JoinGroup(group string) error {
 	}
 
 	c.currentJoinedGroup = group
+	c.metrics.RecordGroupJoin()
 
 	return err
 }
@@ -174,6 +185,8 @@ func (c *connection) BodyDecoded(msgID string, w io.Writer, discard int64) (int6
 		return n, err
 	}
 
+	c.metrics.RecordDownload(n)
+	c.metrics.RecordArticle()
 	return n, nil
 }
 
@@ -193,6 +206,7 @@ func (c *connection) BodyReader(msgID string) (ArticleBodyReader, error) {
 
 	dec := rapidyenc.AcquireDecoder(c.conn.R)
 
+	c.metrics.RecordArticle()
 	return &articleBodyReader{
 		decoder:    dec,
 		conn:       c,
@@ -213,7 +227,7 @@ func (c *connection) Post(r io.Reader) error {
 
 	w := c.conn.DotWriter()
 
-	_, err = io.Copy(w, r)
+	n, err := io.Copy(w, r)
 	if err != nil {
 		// This seems really bad
 		return err
@@ -224,6 +238,9 @@ func (c *connection) Post(r io.Reader) error {
 	}
 
 	_, _, err = c.conn.ReadCodeLine(240)
+	if err == nil {
+		c.metrics.RecordUpload(n)
+	}
 
 	return err
 }
@@ -314,6 +331,7 @@ func (c *connection) readStrings() ([]string, error) {
 func (c *connection) sendCmd(expectCode int, cmd string, args ...any) (int, string, error) {
 	id, err := c.conn.Cmd(cmd, args...)
 	if err != nil {
+		c.metrics.RecordCommand(false)
 		return 0, "", err
 	}
 
@@ -321,7 +339,14 @@ func (c *connection) sendCmd(expectCode int, cmd string, args ...any) (int, stri
 
 	defer c.conn.EndResponse(id)
 
-	return c.conn.ReadCodeLine(expectCode)
+	code, line, err := c.conn.ReadCodeLine(expectCode)
+	c.metrics.RecordCommand(err == nil)
+	return code, line, err
+}
+
+// GetMetrics returns the connection metrics
+func (c *connection) GetMetrics() *Metrics {
+	return c.metrics
 }
 
 func formatError(err error) error {
