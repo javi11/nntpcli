@@ -9,9 +9,9 @@ import (
 // All operations are non-blocking and have minimal performance overhead
 type Metrics struct {
 	// Connection timing (unix timestamps for minimal overhead)
-	connectedAt   int64
-	lastActivity  int64
-	
+	connectedAt  int64
+	lastActivity int64
+
 	// Counters (atomic int64 for thread-safety without locks)
 	totalCommands     int64
 	commandErrors     int64
@@ -21,7 +21,7 @@ type Metrics struct {
 	authAttempts      int64
 	authFailures      int64
 	groupJoins        int64
-	
+
 	// Optional: only calculated when requested to avoid continuous overhead
 	isEnabled int32 // 0 = disabled, 1 = enabled
 }
@@ -131,18 +131,18 @@ func (m *Metrics) GetSnapshot() MetricsSnapshot {
 	commandErrors := atomic.LoadInt64(&m.commandErrors)
 	authAttempts := atomic.LoadInt64(&m.authAttempts)
 	authFailures := atomic.LoadInt64(&m.authFailures)
-	
+
 	// Calculate success rates
-	var successRate float64 = 100.0
+	successRate := 100.0
 	if totalCommands > 0 {
 		successRate = float64(totalCommands-commandErrors) / float64(totalCommands) * 100.0
 	}
-	
-	var authSuccessRate float64 = 100.0
+
+	authSuccessRate := 100.0
 	if authAttempts > 0 {
 		authSuccessRate = float64(authAttempts-authFailures) / float64(authAttempts) * 100.0
 	}
-	
+
 	return MetricsSnapshot{
 		ConnectedAt:       connectedAt,
 		LastActivity:      lastActivity,
