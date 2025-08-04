@@ -212,6 +212,7 @@ func (c *connection) BodyReader(msgID string) (ArticleBodyReader, error) {
 		conn:       c,
 		responseID: id,
 		closed:     false,
+		metrics:    c.metrics,
 	}, nil
 }
 
@@ -240,6 +241,7 @@ func (c *connection) Post(r io.Reader) error {
 	_, _, err = c.conn.ReadCodeLine(240)
 	if err == nil {
 		c.metrics.RecordUpload(n)
+		c.metrics.RecordArticlePosted()
 	}
 
 	return err

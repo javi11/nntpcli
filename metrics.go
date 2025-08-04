@@ -18,6 +18,7 @@ type Metrics struct {
 	bytesDownloaded   int64
 	bytesUploaded     int64
 	articlesRetrieved int64
+	articlesPosted    int64
 	authAttempts      int64
 	authFailures      int64
 	groupJoins        int64
@@ -98,6 +99,14 @@ func (m *Metrics) RecordArticle() {
 	atomic.AddInt64(&m.articlesRetrieved, 1)
 }
 
+func (m *Metrics) RecordArticlePosted() {
+	if !m.IsEnabled() {
+		return
+	}
+	atomic.StoreInt64(&m.lastActivity, time.Now().Unix())
+	atomic.AddInt64(&m.articlesPosted, 1)
+}
+
 func (m *Metrics) RecordGroupJoin() {
 	if !m.IsEnabled() {
 		return
@@ -116,6 +125,7 @@ type MetricsSnapshot struct {
 	BytesDownloaded   int64     `json:"bytes_downloaded"`
 	BytesUploaded     int64     `json:"bytes_uploaded"`
 	ArticlesRetrieved int64     `json:"articles_retrieved"`
+	ArticlesPosted    int64     `json:"articles_posted"`
 	AuthAttempts      int64     `json:"auth_attempts"`
 	AuthFailures      int64     `json:"auth_failures"`
 	GroupJoins        int64     `json:"group_joins"`
@@ -152,6 +162,7 @@ func (m *Metrics) GetSnapshot() MetricsSnapshot {
 		BytesDownloaded:   atomic.LoadInt64(&m.bytesDownloaded),
 		BytesUploaded:     atomic.LoadInt64(&m.bytesUploaded),
 		ArticlesRetrieved: atomic.LoadInt64(&m.articlesRetrieved),
+		ArticlesPosted:    atomic.LoadInt64(&m.articlesPosted), // Assuming articles posted is same as retrieved for simplicity
 		AuthAttempts:      authAttempts,
 		AuthFailures:      authFailures,
 		GroupJoins:        atomic.LoadInt64(&m.groupJoins),

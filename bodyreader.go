@@ -23,6 +23,7 @@ type ArticleBodyReader interface {
 }
 
 type articleBodyReader struct {
+	metrics     *Metrics
 	decoder     *rapidyenc.Decoder
 	conn        *connection
 	responseID  uint
@@ -43,11 +44,18 @@ func (r *articleBodyReader) Read(p []byte) (n int, err error) {
 			r.buffer = nil
 		}
 		if n > 0 || err != nil {
+			r.metrics.RecordDownload(int64(n))
+
 			return n, err
 		}
 	}
 
-	return r.decoder.Read(p)
+	n, err = r.decoder.Read(p)
+	if n > 0 {
+		r.metrics.RecordDownload(int64(n))
+	}
+
+	return n, err
 }
 
 func (r *articleBodyReader) GetYencHeaders() (YencHeaders, error) {
