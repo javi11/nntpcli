@@ -1,3 +1,5 @@
+# DEPRECATED use https://github.com/javi11/nntppool/tree/main/pkg/nntpcli instead
+
 # nntpcli
 
 A NNTP client with the fastest yenc support.
